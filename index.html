@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian Matematika Kelas XII 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+        .radio-custom:checked + label {
+            background-color: #eef2ff;
+            border-color: #6366f1;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        /* Hide scrollbar for cleaner look but keep functionality */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-gray-800 antialiased h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-bold text-xl">M</div>
+                <h1 class="text-xl font-bold text-gray-900">MathExam<span class="text-indigo-600">.</span></h1>
+            </div>
+            <div id="header-user-info" class="hidden flex items-center gap-4">
+                <span id="header-user-name" class="font-medium text-sm text-gray-700"></span>
+                <button onclick="logout()" class="text-sm text-red-600 hover:text-red-800 font-medium">Keluar</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative p-4 sm:p-6 lg:p-8" id="main-container">
+        
+        <!-- View: Loading -->
+        <div id="view-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-50">
+            <div class="loader mb-4"></div>
+            <p class="text-gray-500 font-medium" id="loading-text">Memuat Sistem...</p>
+        </div>
+
+        <!-- View: Login -->
+        <div id="view-login" class="hidden max-w-md mx-auto glass-panel rounded-2xl p-8 mt-10">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">Selamat Datang</h2>
+                <p class="text-gray-500 mt-2 text-sm">Silakan masuk untuk melanjutkan ke portal ujian.</p>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Masuk Sebagai</label>
+                    <select id="login-role" onchange="toggleLoginFields()" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 border outline-none">
+                        <option value="student">Murid</option>
+                        <option value="teacher">Guru</option>
+                    </select>
+                </div>
+
+                <!-- Teacher Fields -->
+                <div id="teacher-fields" class="hidden space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Guru</label>
+                        <input type="text" value="FANGKI MURSID" disabled class="w-full bg-gray-100 border-gray-300 rounded-lg shadow-sm py-2 px-3 text-gray-500 border cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="teacher-password" placeholder="Masukkan Password" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 border outline-none">
+                    </div>
+                </div>
+
+                <!-- Student Fields -->
+                <div id="student-fields" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                        <input type="text" value="XII 2" disabled class="w-full bg-gray-100 border-gray-300 rounded-lg shadow-sm py-2 px-3 text-gray-500 border cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Murid</label>
+                        <select id="student-name" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 border outline-none max-h-48 overflow-y-auto">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div id="login-error" class="hidden text-red-500 text-sm font-medium text-center"></div>
+
+                <button onclick="handleLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition duration-200 flex justify-center items-center gap-2">
+                    Masuk Portal
+                </button>
+            </div>
+        </div>
+
+        <!-- View: Exam Intro -->
+        <div id="view-exam-intro" class="hidden max-w-2xl mx-auto glass-panel rounded-2xl p-8 mt-10 text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Ujian Matematika Dasar</h2>
+            <p class="text-gray-600 mb-6 leading-relaxed text-left bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <strong>Peraturan Ujian:</strong><br>
+                1. Waktu ujian adalah <strong>25 Menit</strong>.<br>
+                2. Terdapat 30 Soal Pilihan Ganda (Campuran Opersai Dasar & Pecahan).<br>
+                3. <span class="text-red-600 font-semibold">DILARANG KELUAR DARI APLIKASI/TAB.</span> Jika Anda keluar dari layar ujian, sistem akan otomatis mengakhiri ujian Anda dengan nilai yang ada.<br>
+                4. Anda hanya dapat mengerjakan ujian ini <strong>1 (satu) kali</strong>.
+            </p>
+            <button onclick="startExam()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg transition duration-200 transform hover:scale-105">
+                Mulai Ujian Sekarang
+            </button>
+        </div>
+
+        <!-- View: Active Exam -->
+        <div id="view-exam-active" class="hidden max-w-3xl mx-auto">
+            <!-- Sticky Timer Bar -->
+            <div class="sticky top-0 bg-white/90 backdrop-blur shadow-sm rounded-b-xl mb-6 p-4 flex justify-between items-center z-20 border-b border-indigo-100">
+                <div class="font-semibold text-gray-700" id="exam-student-label">Murid: -</div>
+                <div class="flex items-center gap-2 text-indigo-700 font-bold bg-indigo-50 px-4 py-2 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="timer-display" class="text-xl tracking-wider">25:00</span>
+                </div>
+            </div>
+
+            <div id="questions-container" class="space-y-6 pb-20">
+                <!-- Questions injected here by JS -->
+            </div>
+
+            <div class="mt-8 flex justify-end pb-8">
+                <button onclick="confirmSubmitExam()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition duration-200">
+                    Selesai & Kumpulkan
+                </button>
+            </div>
+        </div>
+
+        <!-- View: Student Result -->
+        <div id="view-student-result" class="hidden max-w-lg mx-auto glass-panel rounded-2xl p-8 mt-10 text-center">
+            <div class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Ujian Selesai!</h2>
+            <p class="text-gray-500 mb-6">Terima kasih telah mengikuti ujian matematika.</p>
+            
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 mb-6">
+                <p class="text-sm text-gray-500 uppercase tracking-wider font-semibold mb-1">Nilai Anda</p>
+                <p id="result-score" class="text-6xl font-black text-indigo-600">0</p>
+                <div class="mt-4 text-sm text-gray-600 flex justify-center gap-4">
+                    <span>Benar: <strong id="result-correct" class="text-green-600">0</strong></span>
+                    <span>Salah: <strong id="result-wrong" class="text-red-600">0</strong></span>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400">Anda tidak dapat mengulang ujian ini kembali.</p>
+        </div>
+
+        <!-- View: Teacher Dashboard -->
+        <div id="view-teacher-dashboard" class="hidden max-w-6xl mx-auto mt-4">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Dasbor Guru</h2>
+                    <p class="text-gray-500 text-sm">Daftar Nilai Ujian Matematika Kelas XII 2</p>
+                </div>
+                <button onclick="exportToCSV()" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Export Excel (CSV)
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">No</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Nama Murid</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-center">Status</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-center">Benar</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-center">Nilai (100)</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-right">Waktu Submit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-table-body" class="divide-y divide-gray-100">
+                            <!-- Rows populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal for general messages (Custom alert) -->
+    <div id="custom-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 transform scale-100 transition-all">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-2">Pemberitahuan</h3>
+            <p id="modal-message" class="text-gray-600 mb-6 text-sm"></p>
+            <div class="flex justify-end gap-3" id="modal-actions">
+                <button onclick="closeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm w-full">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'math-exam-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "mock-key", authDomain: "mock.firebaseapp.com", projectId: "mock-project", storageBucket: "mock.appspot.com", messagingSenderId: "123", appId: "1:123:web:123"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Data & State ---
+        const studentList = [
+            "ABRIYANTI GANI", "ANGGUN HUSA", "ELIN AJILAHU", "FAHRIYANTO SALATI", 
+            "FEBRIANTI SUDURI", "FIKRAM MADANI IDRUS", "FIRLI ADUNA", "FITRIA ANGGRAINI HUNTA", 
+            "HAIKAL HAMID", "HAMZA PUTRA LAIMA", "KHAIRIL PONGOLIU", "M0HAMAD RASYID ALI", 
+            "MARSEL LUMULA", "MOH. FAJRUL MACHIEU", "PADLI WULUNGO", "RAMDAN SAIDI", 
+            "RANDA DARMAWAN DATAU", "REFLIN NEI", "REYHAN DWI PUTRA SALEH", "RIVALDO TUNA", 
+            "SINTIYA BARIDU", "SISKA JULIA BEKI", "SRI ADELIA GANI", "SRI LELA MURSAHA", 
+            "SRI MUNIFA SAIDI", "SRI WANDA USMAN", "TRI RENALDI NASARU", "ULYAN OLII", 
+            "VALENTRESIA DJIBU", "VINCENT SAHID", "ZIMIN MANTULALU", "ZULFIKRI HAGOLO", 
+            "ZULKIFLI DAINGO", "ZULTIA SAIDI", "ZULVIKRI SAIDI"
+        ];
+
+        let currentUser = null; // { role: 'student'|'teacher', name: string }
+        let generatedQuestions = [];
+        let studentAnswers = {};
+        let examActive = false;
+        let timerInterval = null;
+        let timeLeft = 25 * 60; // 25 minutes in seconds
+        let scoresListener = null;
+
+        // --- Initialization ---
+        window.onload = async () => {
+            populateStudentSelect();
+            showView('loading');
+            
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // Check if already logged in via sessionStorage (for page refreshes)
+                const savedSession = sessionStorage.getItem('exam_session');
+                if (savedSession) {
+                    currentUser = JSON.parse(savedSession);
+                    setupUIForUser();
+                } else {
+                    showView('login');
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                showModal("Gagal menghubungkan ke server. Silakan muat ulang halaman.");
+                showView('login');
+            }
+        };
+
+        function populateStudentSelect() {
+            const select = document.getElementById('student-name');
+            select.innerHTML = `<option value="" disabled selected>-- Pilih Nama Anda --</option>`;
+            studentList.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        }
+
+        window.toggleLoginFields = () => {
+            const role = document.getElementById('login-role').value;
+            document.getElementById('teacher-fields').classList.toggle('hidden', role !== 'teacher');
+            document.getElementById('student-fields').classList.toggle('hidden', role !== 'student');
+            document.getElementById('login-error').classList.add('hidden');
+        };
+
+        window.handleLogin = async () => {
+            const role = document.getElementById('login-role').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+
+            if (role === 'teacher') {
+                const pass = document.getElementById('teacher-password').value;
+                if (pass === '970128') {
+                    currentUser = { role: 'teacher', name: 'FANGKI MURSID' };
+                    sessionStorage.setItem('exam_session', JSON.stringify(currentUser));
+                    setupUIForUser();
+                } else {
+                    errorDiv.textContent = "Password Guru Salah!";
+                    errorDiv.classList.remove('hidden');
+                }
+            } else {
+                const studentName = document.getElementById('student-name').value;
+                if (!studentName) {
+                    errorDiv.textContent = "Silakan pilih nama Anda!";
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                
+                showView('loading');
+                document.getElementById('loading-text').textContent = "Mengecek status ujian...";
+                
+                // Check if student has already taken the exam
+                const docId = studentName.replace(/\s+/g, '_');
+                const scoreRef = doc(db, 'artifacts', appId, 'public', 'data', 'scores', docId);
+                
+                try {
+                    const docSnap = await getDoc(scoreRef);
+                    currentUser = { role: 'student', name: studentName, docId: docId };
+                    sessionStorage.setItem('exam_session', JSON.stringify(currentUser));
+                    
+                    if (docSnap.exists()) {
+                        // Already taken
+                        const data = docSnap.data();
+                        showStudentResult(data.score, data.correct);
+                    } else {
+                        // Not taken, go to intro
+                        setupUIForUser();
+                    }
+                } catch (error) {
+                    console.error("Error checking doc:", error);
+                    showModal("Terjadi kesalahan sistem. Silakan coba lagi.");
+                    showView('login');
+                }
+            }
+        };
+
+        window.logout = () => {
+            sessionStorage.removeItem('exam_session');
+            currentUser = null;
+            examActive = false;
+            if(timerInterval) clearInterval(timerInterval);
+            if(scoresListener) scoresListener(); // unsubscribe
+            document.getElementById('header-user-info').classList.add('hidden');
+            document.getElementById('login-password') && (document.getElementById('teacher-password').value = '');
+            showView('login');
+        };
+
+        function setupUIForUser() {
+            document.getElementById('header-user-info').classList.remove('hidden');
+            document.getElementById('header-user-name').textContent = currentUser.name;
+
+            if (currentUser.role === 'teacher') {
+                showView('teacher-dashboard');
+                initTeacherDashboard();
+            } else {
+                // Determine if we show intro or result
+                checkStudentStatusAndRoute();
+            }
+        }
+
+        async function checkStudentStatusAndRoute() {
+            showView('loading');
+            const scoreRef = doc(db, 'artifacts', appId, 'public', 'data', 'scores', currentUser.docId);
+            const docSnap = await getDoc(scoreRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                showStudentResult(data.score, data.correct);
+            } else {
+                showView('exam-intro');
+            }
+        }
+
+        function showView(viewId) {
+            ['loading', 'login', 'exam-intro', 'exam-active', 'student-result', 'teacher-dashboard'].forEach(id => {
+                document.getElementById('view-' + id).classList.add('hidden');
+            });
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+        }
+
+        // Utilities for generation
+        function rInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+        
+        function generateWrongOptions(correct, isFraction = false) {
+            let options = [correct];
+            let attempts = 0;
+            while(options.length < 4 && attempts < 20) {
+                attempts++;
+                let wrong;
+                if (!isFraction) {
+                    let offset = rInt(-15, 15);
+                    if (offset === 0) offset = 5;
+                    wrong = correct + offset;
+                    // For multiplication, maybe distractor is off by a factor
+                    if (correct > 50 && Math.random() > 0.5) wrong = correct + rInt(-2, 2) * 10; 
+                } else {
+                    // Fraction distractor logic (simple string manip based on correct)
+                    let [n, d] = correct.split('/').map(Number);
+                    if(!d) { wrong = `${n + rInt(1,3)}/${rInt(2,5)}`; }
+                    else { wrong = `${n + rInt(-2,3)}/${d + rInt(1,2)}`; }
+                    if(wrong.startsWith('0/')) wrong = `1/${d+1}`;
+                }
+                
+                if (!options.includes(wrong) && wrong !== correct) {
+                    options.push(wrong);
+                }
+            }
+            return shuffle(options);
+        }
+
+        function generateQuestions() {
+            let qList = [];
+            
+            // 1. Penjumlahan & Pengurangan (Positif/Negatif) - 10 Soal
+            for(let i=0; i<10; i++) {
+                let a = rInt(-50, 50);
+                let b = rInt(-50, 50);
+                let isAdd = Math.random() > 0.5;
+                let qText = isAdd ? `${a} + (${b})` : `${a} - (${b})`;
+                if (b >= 0) qText = isAdd ? `${a} + ${b}` : `${a} - ${b}`;
+                
+                let ans = isAdd ? a + b : a - b;
+                qList.push({
+                    text: `Hasil dari ${qText} adalah...`,
+                    options: generateWrongOptions(ans),
+                    correct: ans.toString()
+                });
+            }
+
+            // 2. Perkalian (Positif/Negatif) - 10 Soal
+            for(let i=0; i<10; i++) {
+                let a = rInt(-20, 20);
+                let b = rInt(-20, 20);
+                let qText = `${a} × ${b < 0 ? '('+b+')' : b}`;
+                let ans = a * b;
+                qList.push({
+                    text: `Hasil dari ${qText} adalah...`,
+                    options: generateWrongOptions(ans),
+                    correct: ans.toString()
+                });
+            }
+
+            // 3. Pembagian 3-digit dgn 1-digit - 5 Soal
+            for(let i=0; i<5; i++) {
+                let divisor = rInt(2, 9);
+                let result = rInt(12, 111); // ensuring 3 digit dividend
+                let dividend = divisor * result; 
+                // Adjust if < 100
+                if (dividend < 100) { result += 10; dividend = divisor * result; }
+                
+                qList.push({
+                    text: `Hasil pembagian dari ${dividend} ÷ ${divisor} adalah...`,
+                    options: generateWrongOptions(result),
+                    correct: result.toString()
+                });
+            }
+
+            // 4. Pecahan Dasar - 5 Soal
+            const ops = ['+', '-', '×', '÷'];
+            for(let i=0; i<5; i++) {
+                let d1 = rInt(2, 6);
+                let n1 = rInt(1, d1-1) || 1;
+                let d2 = rInt(2, 6);
+                let n2 = rInt(1, d2-1) || 1;
+                let op = ops[i % 4]; // ensure mix
+                if(i===4) op = ops[rInt(0,3)];
+
+                let qText = `${n1}/${d1} ${op} ${n2}/${d2}`;
+                let correctStr = "";
+                
+                // Calculate correct answer
+                if (op === '+') {
+                    let top = (n1*d2) + (n2*d1);
+                    let bot = d1*d2;
+                    correctStr = simplifyFraction(top, bot);
+                } else if (op === '-') {
+                    let top = (n1*d2) - (n2*d1);
+                    let bot = d1*d2;
+                    correctStr = simplifyFraction(top, bot);
+                } else if (op === '×') {
+                    correctStr = simplifyFraction(n1*n2, d1*d2);
+                } else if (op === '÷') {
+                    correctStr = simplifyFraction(n1*d2, d1*n2);
+                }
+
+                qList.push({
+                    text: `Hasil dari operasi pecahan ${qText} adalah...`,
+                    options: generateWrongOptions(correctStr, true),
+                    correct: correctStr
+                });
+            }
+
+            return shuffle(qList); // Shuffle all 30 questions
+        }
+
+        function simplifyFraction(n, d) {
+            if (n === 0) return "0";
+            let isNeg = (n < 0 && d > 0) || (n > 0 && d < 0);
+            n = Math.abs(n);
+            d = Math.abs(d);
+            
+            let a = n, b = d, t;
+            while(b !== 0) { t = b; b = a % b; a = t; }
+            let gcd = a;
+            
+            let newN = n/gcd;
+            let newD = d/gcd;
+            
+            let res = newD === 1 ? `${newN}` : `${newN}/${newD}`;
+            return isNeg ? `-${res}` : res;
+        }
+
+        window.startExam = () => {
+            generatedQuestions = generateQuestions();
+            studentAnswers = {};
+            renderQuestions();
+            
+            document.getElementById('exam-student-label').textContent = `Peserta: ${currentUser.name}`;
+            showView('exam-active');
+            
+            examActive = true;
+            timeLeft = 25 * 60;
+            updateTimerDisplay();
+            timerInterval = setInterval(handleTimer, 1000);
+        };
+
+        function handleTimer() {
+            if (!examActive) return;
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                forceSubmitExam("Waktu ujian telah habis!");
+            } else if (timeLeft === 300) { // 5 minutes left warning
+                showModal("Peringatan: Waktu ujian tersisa 5 menit lagi.");
+            }
+        }
+
+        function updateTimerDisplay() {
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            document.getElementById('timer-display').textContent = 
+                `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            
+            if (timeLeft < 60) {
+                document.getElementById('timer-display').classList.add('text-red-600', 'animate-pulse');
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            generatedQuestions.forEach((q, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-6';
+                
+                let html = `<p class="font-semibold text-gray-800 mb-4 text-lg"><span class="mr-2 text-indigo-500">${index + 1}.</span> ${q.text}</p>`;
+                html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
+                
+                const optionLabels = ['A', 'B', 'C', 'D'];
+                q.options.forEach((opt, oIndex) => {
+                    const optId = `q${index}_o${oIndex}`;
+                    html += `
+                        <div class="relative">
+                            <input type="radio" name="q${index}" id="${optId}" value="${opt}" class="radio-custom sr-only" onchange="saveAnswer(${index}, '${opt}')">
+                            <label for="${optId}" class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-md mr-3 font-bold text-gray-600 text-sm label-letter">${optionLabels[oIndex]}</span>
+                                <span class="text-gray-700">${opt}</span>
+                            </label>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                qDiv.innerHTML = html;
+                container.appendChild(qDiv);
+            });
+        }
+
+        window.saveAnswer = (qIndex, val) => {
+            studentAnswers[qIndex] = val;
+        };
+
+        // Anti-Cheat: Listen for tab visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && examActive) {
+                forceSubmitExam("Sistem mendeteksi Anda keluar dari layar ujian. Ujian diakhiri secara otomatis untuk mencegah kecurangan.");
+            }
+        });
+
+        window.confirmSubmitExam = () => {
+            const answeredCount = Object.keys(studentAnswers).length;
+            if (answeredCount < 30) {
+                showModalConfirm(`Anda baru menjawab ${answeredCount} dari 30 soal. Yakin ingin mengumpulkan sekarang?`, submitExam);
+            } else {
+                showModalConfirm("Apakah Anda yakin ingin mengumpulkan ujian ini? Aksi ini tidak dapat diubah.", submitExam);
+            }
+        };
+
+        function forceSubmitExam(reason) {
+            if (!examActive) return;
+            showModal(reason);
+            submitExam();
+        }
+
+        async function submitExam() {
+            if (!examActive) return;
+            examActive = false;
+            clearInterval(timerInterval);
+            showView('loading');
+            document.getElementById('loading-text').textContent = "Menyimpan nilai...";
+
+            // Calculate Score
+            let correct = 0;
+            generatedQuestions.forEach((q, index) => {
+                if (studentAnswers[index] === q.correct) {
+                    correct++;
+                }
+            });
+
+            // 30 questions. Score = (correct / 30) * 100
+            let score = Math.round((correct / 30) * 100);
+
+            // Save to Firebase
+            if (!auth.currentUser) return; // safety
+
+            const scoreData = {
+                name: currentUser.name,
+                correct: correct,
+                totalQuestions: 30,
+                score: score,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const scoreRef = doc(db, 'artifacts', appId, 'public', 'data', 'scores', currentUser.docId);
+                await setDoc(scoreRef, scoreData);
+                showStudentResult(score, correct);
+            } catch (error) {
+                console.error("Failed to save score:", error);
+                showModal("Gagal menyimpan nilai ke server. Coba periksa koneksi internet.");
+                showView('exam-active'); // Return to exam to retry submitting
+                examActive = true;
+            }
+        }
+
+        function showStudentResult(score, correct) {
+            document.getElementById('result-score').textContent = score;
+            document.getElementById('result-correct').textContent = correct;
+            document.getElementById('result-wrong').textContent = 30 - correct;
+            showView('student-result');
+        }
+
+        function initTeacherDashboard() {
+            const tbody = document.getElementById('dashboard-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">Memuat data nilai...</td></tr>`;
+
+            const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
+            
+            if (scoresListener) scoresListener(); // clear previous
+            
+            scoresListener = onSnapshot(scoresCol, (snapshot) => {
+                const data = [];
+                snapshot.forEach(doc => data.push(doc.data()));
+                
+                // Sort by name alphabetically
+                data.sort((a, b) => a.name.localeCompare(b.name));
+                
+                renderDashboardTable(data);
+            }, (error) => {
+                console.error("Dashboard error:", error);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500">Gagal memuat data</td></tr>`;
+            });
+        }
+
+        function renderDashboardTable(data) {
+            const tbody = document.getElementById('dashboard-table-body');
+            tbody.innerHTML = '';
+
+            // Merge student list with answered data
+            studentList.forEach((name, index) => {
+                const record = data.find(d => d.name === name);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition";
+                
+                let statusHtml, correctHtml, scoreHtml, timeHtml;
+                
+                if (record) {
+                    let d = new Date(record.timestamp);
+                    let timeStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+                    
+                    statusHtml = `<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">Selesai</span>`;
+                    correctHtml = `<span class="font-medium text-gray-800">${record.correct}/30</span>`;
+                    scoreHtml = `<span class="font-bold text-indigo-600">${record.score}</span>`;
+                    timeHtml = timeStr;
+                } else {
+                    statusHtml = `<span class="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs font-semibold">Belum</span>`;
+                    correctHtml = `-`;
+                    scoreHtml = `-`;
+                    timeHtml = `-`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm text-gray-500">${index + 1}</td>
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm font-medium text-gray-900">${name}</td>
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm text-center">${statusHtml}</td>
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm text-center">${correctHtml}</td>
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm text-center">${scoreHtml}</td>
+                    <td class="py-3 px-4 border-b border-gray-100 text-sm text-right text-gray-500">${timeHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.exportToCSV = () => {
+            // Need to fetch current snapshot purely for export
+            const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
+            // We use the onSnapshot mapped data indirectly by grabbing table rows
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "No,Nama Murid,Kelas,Status,Benar,Salah,Nilai,Waktu Selesai\n";
+
+            const tbody = document.getElementById('dashboard-table-body');
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach((row, i) => {
+                const cols = row.querySelectorAll('td');
+                if(cols.length < 6) return;
+                
+                let nama = cols[1].innerText;
+                let kelas = "XII 2";
+                let status = cols[2].innerText;
+                let benar = cols[3].innerText !== '-' ? cols[3].innerText.split('/')[0] : '';
+                let salah = benar !== '' ? (30 - parseInt(benar)).toString() : '';
+                let nilai = cols[4].innerText !== '-' ? cols[4].innerText : '';
+                let waktu = cols[5].innerText !== '-' ? cols[5].innerText : '';
+                
+                let rowData = `${i+1},"${nama}","${kelas}","${status}","${benar}","${salah}","${nilai}","${waktu}"`;
+                csvContent += rowData + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Nilai_Matematika_XII_2_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.showModal = (msg) => {
+            document.getElementById('modal-title').textContent = "Pemberitahuan";
+            document.getElementById('modal-message').innerHTML = msg;
+            document.getElementById('modal-actions').innerHTML = `<button onclick="closeModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm w-full transition">Mengerti</button>`;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        };
+
+        window.showModalConfirm = (msg, onConfirm) => {
+            document.getElementById('modal-title').textContent = "Konfirmasi";
+            document.getElementById('modal-message').innerHTML = msg;
+            
+            const actionDiv = document.getElementById('modal-actions');
+            actionDiv.innerHTML = `
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg text-sm flex-1 transition">Batal</button>
+                <button id="modal-confirm-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm flex-1 transition">Ya, Yakin</button>
+            `;
+            
+            document.getElementById('modal-confirm-btn').onclick = () => {
+                closeModal();
+                onConfirm();
+            };
+            
+            document.getElementById('custom-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('custom-modal').classList.add('hidden');
+        };
+
+    </script>
+</body>
+</html>
